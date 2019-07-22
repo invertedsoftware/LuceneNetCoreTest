@@ -19,7 +19,7 @@ namespace LuceneNetCoreTest.Controllers
 			this.luceneManager = luceneManager;
 			_cache = memoryCache;
 		}
-		public IActionResult Index([FromQuery] string searchText)
+		public async Task<IActionResult> Index([FromQuery] string searchText)
 		{
 			// If bringing the data from the cache. Rebuild Lucene's index files on each cache refresh
 			List<Resort> resortList = null;
@@ -39,7 +39,7 @@ namespace LuceneNetCoreTest.Controllers
 
 			List<Resort> searchResults = new List<Resort>();
 			if (!string.IsNullOrWhiteSpace(searchText))
-				searchResults = luceneManager.GetsearchResults(searchText);
+				searchResults = await Task.Factory.StartNew<List<Resort>>(()=> luceneManager.GetsearchResults(searchText));
 
 			return View(searchResults);
 

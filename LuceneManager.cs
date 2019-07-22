@@ -17,6 +17,10 @@ using System.Threading;
 
 namespace LuceneNetCoreTest
 {
+	/// <summary>
+	/// This class needs to be added as a singleton in order to operate correctly.
+	/// Add services.AddSingleton<LuceneManager>(); in ConfigureServices(IServiceCollection services)
+	/// </summary>
 	public class LuceneManager
 	{
 		LuceneVersion AppLuceneVersion = LuceneVersion.LUCENE_48;
