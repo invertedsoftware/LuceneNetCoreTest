@@ -21,7 +21,6 @@ namespace LuceneNetCoreTest.Controllers
 		}
 		public IActionResult Index([FromQuery] string searchText)
 		{
-
 			// If bringing the data from the cache. Rebuild Lucene's index files on each cache refresh
 			List<Resort> resortList = null;
 			if (!_cache.TryGetValue("resortList", out resortList))

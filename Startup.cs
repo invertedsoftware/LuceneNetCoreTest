@@ -31,7 +31,7 @@ namespace LuceneNetCoreTest
 				options.MinimumSameSitePolicy = SameSiteMode.None;
 			});
 
-			services.AddTransient<LuceneManager>();
+			services.AddSingleton<LuceneManager>();
 			services.AddMemoryCache();
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 		}
