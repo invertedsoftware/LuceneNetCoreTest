@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LuceneNetCoreTest.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -32,6 +33,8 @@ namespace LuceneNetCoreTest
 			});
 
 			services.AddSingleton<LuceneManager>();
+			services.AddHostedService<QueuedHostedService>();
+			services.AddSingleton<IBackgroundTaskQueue, BackgroundTaskQueue>();
 			services.AddMemoryCache();
 			services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
 		}

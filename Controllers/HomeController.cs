@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using LuceneNetCoreTest.Models;
 using Microsoft.Extensions.Caching.Memory;
+using LuceneNetCoreTest.Services;
 
 namespace LuceneNetCoreTest.Controllers
 {
@@ -13,28 +14,35 @@ namespace LuceneNetCoreTest.Controllers
 	{
 		LuceneManager luceneManager;
 		private IMemoryCache _cache;
+		IBackgroundTaskQueue queue;
 
-		public HomeController(LuceneManager luceneManager, IMemoryCache memoryCache)
+		public HomeController(LuceneManager luceneManager, IMemoryCache memoryCache, IBackgroundTaskQueue queue)
 		{
 			this.luceneManager = luceneManager;
 			_cache = memoryCache;
+			this.queue = queue;
 		}
 		public async Task<IActionResult> Index([FromQuery] string searchText)
 		{
 			// If bringing the data from the cache. Rebuild Lucene's index files on each cache refresh
 			List<Resort> resortList = null;
+
 			if (!_cache.TryGetValue("resortList", out resortList))
 			{
 				resortList = SeedDatabase();
-				// Set cache options. In this example to 5 seconds
+				// Set cache options. In this example to 10 seconds
 				var cacheEntryOptions = new MemoryCacheEntryOptions()
 				{
-					AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(5)
+					AbsoluteExpiration = DateTimeOffset.UtcNow.AddSeconds(10)
 				};
 
 				// Save the data in cache.
 				_cache.Set("resortList", resortList, cacheEntryOptions);
-				luceneManager.InitLucene(); // Rebuild the Lucene indexes from the new data
+
+				if (!luceneManager.isThereAvailableIndex) // This is the first time we build an index so wait for it to be completed before searching.
+					await Task.Factory.StartNew(() => luceneManager.InitLucene()); // Rebuild the Lucene indexes from the new data.
+				else
+					queue.QueueBackgroundWorkItem(async token => { luceneManager.InitLucene(); }); // Do the indexing in the background while searching the old index.
 			}
 
 			List<Resort> searchResults = new List<Resort>();

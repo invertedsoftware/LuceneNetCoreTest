@@ -35,7 +35,10 @@ namespace LuceneNetCoreTest
 		{
 			_env = env;
 			_cache = memoryCache;
+			isThereAvailableIndex = false;
 		}
+
+		public bool isThereAvailableIndex { get; set; }
 
 		/// <summary>
 		/// Build or Rebuild the Lucene index files
@@ -58,30 +61,34 @@ namespace LuceneNetCoreTest
 				var analyzer = new StandardAnalyzer(AppLuceneVersion);
 				//create an index writer
 				var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
-				IndexWriter writer = new IndexWriter(dir, indexConfig);
-				writer.DeleteAll(); // This will rebuild the index files
-
-				List<Resort> resortList = null;
-				if (!_cache.TryGetValue("resortList", out resortList)) // get the resort database from the cache
-					return;
-
-				foreach (var resort in resortList)
+				using (IndexWriter writer = new IndexWriter(dir, indexConfig))
 				{
-					var doc = new Document();
-					doc.Add(new StringField("ResortID", resort.ResortID.ToString(), Field.Store.YES));
-					doc.Add(new TextField("ResortName", resort.ResortName, Field.Store.YES));
-					doc.Add(new TextField("ResortDescription", resort.ResortDescription, Field.Store.YES));
-					writer.AddDocument(doc);
+					writer.DeleteAll(); // This will rebuild the index files
+
+					List<Resort> resortList = null;
+					if (!_cache.TryGetValue("resortList", out resortList)) // get the resort database from the cache
+						return;
+
+					foreach (var resort in resortList)
+					{
+						var doc = new Document();
+						doc.Add(new StringField("ResortID", resort.ResortID.ToString(), Field.Store.YES));
+						doc.Add(new TextField("ResortName", resort.ResortName, Field.Store.YES));
+						doc.Add(new TextField("ResortDescription", resort.ResortDescription, Field.Store.YES));
+						writer.AddDocument(doc);
+					}
+					writer.Commit();
+					writer.Flush(triggerMerge: true, applyAllDeletes: true);
 				}
-				writer.Commit();
-				writer.Flush(triggerMerge: true, applyAllDeletes: true);
-				writer.Dispose();
 
 				// Set the search directory to the new index
 				if (LuceneSubDirIndex == 0)
 					Interlocked.Increment(ref LuceneSubDirIndex);
 				else
 					Interlocked.Decrement(ref LuceneSubDirIndex);
+
+				if (!isThereAvailableIndex) // This gets set only one tiem. after that is an initial index.
+					isThereAvailableIndex = true;
 			}
 		}
 
@@ -94,28 +101,40 @@ namespace LuceneNetCoreTest
 		{
 			List<Resort> searchResults = new List<Resort>();
 
-			var fields = new[] { "ResortName", "ResortDescription" };
-			var analyzer = new StandardAnalyzer(AppLuceneVersion);
-			var queryParser = new MultiFieldQueryParser(AppLuceneVersion, fields, analyzer);
-			var query = queryParser.Parse(searchText);
-			var dir = FSDirectory.Open(Path.Combine(LuceneDir, LuceneSubDir[LuceneSubDirIndex]));
-			var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
-			IndexWriter writer = new IndexWriter(dir, indexConfig);
-			var searcher = new IndexSearcher(writer.GetReader(applyAllDeletes: true));
-			var hits = searcher.Search(query, 20 /* top 20 */).ScoreDocs;
-
-			foreach (var hit in hits)
+			try
 			{
-				var foundDoc = searcher.Doc(hit.Doc);
+				var fields = new[] { "ResortName", "ResortDescription" };
+				var analyzer = new StandardAnalyzer(AppLuceneVersion);
+				var queryParser = new MultiFieldQueryParser(AppLuceneVersion, fields, analyzer);
+				var query = queryParser.Parse(searchText);
+				var dir = FSDirectory.Open(Path.Combine(LuceneDir, LuceneSubDir[LuceneSubDirIndex]));
+				var indexConfig = new IndexWriterConfig(AppLuceneVersion, analyzer);
+				using (IndexWriter writer = new IndexWriter(dir, indexConfig))
+				{
+					var searcher = new IndexSearcher(writer.GetReader(applyAllDeletes: true));
+					var hits = searcher.Search(query, 20 /* top 20 */).ScoreDocs;
+
+					foreach (var hit in hits)
+					{
+						var foundDoc = searcher.Doc(hit.Doc);
+						searchResults.Add(new Resort()
+						{
+							ResortID = Convert.ToInt32(foundDoc.Get("ResortID")),
+							ResortName = foundDoc.Get("ResortName"),
+							ResortDescription = foundDoc.Get("ResortDescription")
+						});
+
+					}
+				}
+			}
+			catch (Exception ex)
+			{
 				searchResults.Add(new Resort()
 				{
-					ResortID = Convert.ToInt32(foundDoc.Get("ResortID")),
-					ResortName = foundDoc.Get("ResortName"),
-					ResortDescription = foundDoc.Get("ResortDescription")
-				});
-				
+					ResortName = "Search is Offline",
+					ResortDescription = ex.Message
+				}); ;
 			}
-			writer.Dispose();
 
 			return searchResults;
 		}
