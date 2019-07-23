@@ -4,14 +4,14 @@
 }
 
 	<div class="text-center">
-		<h1 class="display-4">Search for a Hotel using Lucene.NET on .NET Core</h1>
+		<h1 class="display-4">Search for a Resort using Lucene.NET on .NET Core</h1>
 		<div class="card-deck">
 			@foreach (var item in Model)
 			{
-				<div class="card">
+				<div class="card mb-4">
 					<div class="card-body">
-						<h5 class="card-title">@item.ResortName</h5>
-						<p class="card-text">@item.ResortDescription</p>
+						<h5 class="card-title">@item.Name</h5>
+						<p class="card-text">@item.Resort_Description__c</p>
 					</div>
 				</div>
 			}

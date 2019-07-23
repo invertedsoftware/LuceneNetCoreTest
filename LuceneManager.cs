@@ -35,10 +35,10 @@ namespace LuceneNetCoreTest
 		{
 			_env = env;
 			_cache = memoryCache;
-			isThereAvailableIndex = false;
+			IsThereAvailableIndex = false;
 		}
 
-		public bool isThereAvailableIndex { get; set; }
+		public bool IsThereAvailableIndex { get; set; }
 
 		/// <summary>
 		/// Build or Rebuild the Lucene index files
@@ -71,11 +71,14 @@ namespace LuceneNetCoreTest
 
 					foreach (var resort in resortList)
 					{
-						var doc = new Document();
-						doc.Add(new StringField("ResortID", resort.ResortID.ToString(), Field.Store.YES));
-						doc.Add(new TextField("ResortName", resort.ResortName, Field.Store.YES));
-						doc.Add(new TextField("ResortDescription", resort.ResortDescription, Field.Store.YES));
-						writer.AddDocument(doc);
+						if (!string.IsNullOrWhiteSpace(resort.Name) && !string.IsNullOrWhiteSpace(resort.Resort_Description__c) && !resort.Deleted.HasValue)
+						{
+							var doc = new Document();
+							doc.Add(new StringField("ResortId", resort.ResortId.ToString(), Field.Store.YES));
+							doc.Add(new TextField("Name", resort.Name, Field.Store.YES));
+							doc.Add(new TextField("Resort_Description__c", resort.Resort_Description__c, Field.Store.YES));
+							writer.AddDocument(doc);
+						}
 					}
 					writer.Commit();
 					writer.Flush(triggerMerge: true, applyAllDeletes: true);
@@ -87,8 +90,8 @@ namespace LuceneNetCoreTest
 				else
 					Interlocked.Decrement(ref LuceneSubDirIndex);
 
-				if (!isThereAvailableIndex) // This gets set only one tiem. after that is an initial index.
-					isThereAvailableIndex = true;
+				if (!IsThereAvailableIndex) // This gets set only one time. after that is an initial index.
+					IsThereAvailableIndex = true;
 			}
 		}
 
@@ -103,7 +106,7 @@ namespace LuceneNetCoreTest
 
 			try
 			{
-				var fields = new[] { "ResortName", "ResortDescription" };
+				var fields = new[] { "Resort", "Resort_Description__c" };
 				var analyzer = new StandardAnalyzer(AppLuceneVersion);
 				var queryParser = new MultiFieldQueryParser(AppLuceneVersion, fields, analyzer);
 				var query = queryParser.Parse(searchText);
@@ -119,9 +122,9 @@ namespace LuceneNetCoreTest
 						var foundDoc = searcher.Doc(hit.Doc);
 						searchResults.Add(new Resort()
 						{
-							ResortID = Convert.ToInt32(foundDoc.Get("ResortID")),
-							ResortName = foundDoc.Get("ResortName"),
-							ResortDescription = foundDoc.Get("ResortDescription")
+							ResortId = Convert.ToInt32(foundDoc.Get("ResortId")),
+							Name = foundDoc.Get("Name"),
+							Resort_Description__c = foundDoc.Get("Resort_Description__c")
 						});
 
 					}
@@ -131,8 +134,8 @@ namespace LuceneNetCoreTest
 			{
 				searchResults.Add(new Resort()
 				{
-					ResortName = "Search is Offline",
-					ResortDescription = ex.Message
+					Name = "Search Error",
+					Resort_Description__c = ex.Message
 				}); ;
 			}
 

@@ -2,6 +2,15 @@
   "version": 3,
   "targets": {
     ".NETCoreApp,Version=v2.2": {
+      "InvertedSoftware.DataBlock/1.1.0": {
+        "type": "package",
+        "compile": {
+          "lib/net45/InvertedSoftware.DataBlock.dll": {}
+        },
+        "runtime": {
+          "lib/net45/InvertedSoftware.DataBlock.dll": {}
+        }
+      },
       "Lucene.Net/4.8.0-beta00005": {
         "type": "package",
         "dependencies": {
@@ -4506,6 +4515,18 @@
     }
   },
   "libraries": {
+    "InvertedSoftware.DataBlock/1.1.0": {
+      "sha512": "HyepprVGYcpaDlrbmScDmLPG6kJXB5NDpXXymOrk0I0CoN8y3Sksiwq02Ig7LC1f2UKgX/QhhVgN4loI09kj6A==",
+      "type": "package",
+      "path": "invertedsoftware.datablock/1.1.0",
+      "files": [
+        ".nupkg.metadata",
+        "invertedsoftware.datablock.1.1.0.nupkg.sha512",
+        "invertedsoftware.datablock.nuspec",
+        "lib/net/InvertedSoftware.DataBlock.dll",
+        "lib/net45/InvertedSoftware.DataBlock.dll"
+      ]
+    },
     "Lucene.Net/4.8.0-beta00005": {
       "sha512": "UprkNBEOLxszKl1YN70zDVRU8wJkV4SBvcWqs822Oqpxj5arvxMRqkvqVhBPajPz3YxObsLxJNdYE62xviQjKQ==",
       "type": "package",
@@ -12244,6 +12265,7 @@
   },
   "projectFileDependencyGroups": {
     ".NETCoreApp,Version=v2.2": [
+      "InvertedSoftware.DataBlock >= 1.1.0",
       "Lucene.Net >= 4.8.0-beta00005",
       "Lucene.Net.Analysis.Common >= 4.8.0-beta00005",
       "Lucene.Net.QueryParser >= 4.8.0-beta00005",
@@ -12296,6 +12318,10 @@
     "frameworks": {
       "netcoreapp2.2": {
         "dependencies": {
+          "InvertedSoftware.DataBlock": {
+            "target": "Package",
+            "version": "[1.1.0, )"
+          },
           "Lucene.Net": {
             "target": "Package",
             "version": "[4.8.0-beta00005, )"
@@ -12333,5 +12359,17 @@
         "warn": true
       }
     }
-  }
+  },
+  "logs": [
+    {
+      "code": "NU1701",
+      "level": "Warning",
+      "warningLevel": 1,
+      "message": "Package 'InvertedSoftware.DataBlock 1.1.0' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.2'. This package may not be fully compatible with your project.",
+      "libraryId": "InvertedSoftware.DataBlock",
+      "targetGraphs": [
+        ".NETCoreApp,Version=v2.2"
+      ]
+    }
+  ]
 }
